@@ -1,0 +1,103 @@
+---
+title: "MODELO LOGIT ANIDADO - EJERCICIOS"
+author: "Brian Jafet Carrillo Valdivia"
+date: "2024-05-25"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 1
+    theme: journal
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+<style type="text/css">
+body{/*Normal*/
+     font-size: 20px;
+}
+</style>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(discrtr) # A companion package for the book Introduction to Discrete Choice Analysis with `R`
+library(dplyr) # A Grammar of Data Manipulation
+library(ggplot2) # Create Elegant Data Visualisations Using the Grammar of Graphics
+library(mlogit) # Multinomial Logit Models
+library(readr) # Read Rectangular Text Data
+library(gplots) # Various R Programming Tools for Plotting Data
+library(ggmosaic) # Mosaic Plots in the 'ggplot2' Framework
+library(treemapify)
+library(ggridges)
+library(ggalluvial)
+library(evd)
+library(htmlwidgets) # HTML Widgets for R
+library(kableExtra) # Construct Complex Table with kable and Pipe Syntax
+library(plotly) # Create interactive web graphics
+library(tidyr) # Tidy messy data
+library(webshot2) # Take screenshots of web pages
+# Para poder estimar el modelo de clases latentes, es necesario instalar la versión de desarrollo, 
+# pero antes hay que instalr el package remotes
+#install.packages("remotes")
+#remotes::install_github("mauricio1986/gmnl")
+library(gmnl) # Multinomial Logit Models with Random Parameters
+library(evd)
+library(gridExtra)
+```
+
+
+```{r}
+data("Heating", package = "mlogit")
+H <- mlogit.data(Heating, shape = "wide", choice = "depvar", varying = c(3:12))
+
+```
+
+
+```{r}
+model3 <- mlogit(depvar ~ ic + oc, Heating, shape = "wide", choice = "depvar", reflevel = "ec", varying = c(3:12))
+summary(model3)
+```
+
+
+```{r}
+nl1 <- mlogit(depvar ~ oc + ic, H, nests = list(room=c('er', 'gr'), central = c('ec', 'gc', 'hp')), steptol=1e-12)
+
+summary(nl1)
+```
+
+$1-\lambda_{room}$
+
+```{r}
+1-nl1$coefficients["iv:room"]
+```
+
+$1-\lambda_{central}$
+
+```{r}
+1-nl1$coefficients["iv:central"]
+```
+
+
+```{r}
+lrtest(model3, nl1)
+```
+
+```{r}
+nl2 <- mlogit(depvar ~ ic + oc, H, nests = list(room = c( 'er', 'gr'), central = c('ec', 'gc', 'hp')),
+              un.nest.el = TRUE, steptol = 1e-12)
+
+summary(nl2)
+```
+
+
+```{r}
+lrtest(nl1, nl2)
+```
+
+Tras la comparación entre los modelos anidados, se puede concluir que el modelo que forzó la igualdad de parámetros en los nidos ofrece un mejor ajuste a los datos. Esto sugiere que la similitud entre los parámetros de los nidos es una característica importante del conjunto de datos, y que imponer esta restricción mejora la capacidad del modelo para capturar la estructura subyacente de las preferencias de los decisores. Por lo tanto, este modelo puede ser preferible para futuros análisis y predicciones en el contexto del problema en cuestión.
